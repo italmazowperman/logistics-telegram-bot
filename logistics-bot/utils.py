@@ -1,65 +1,47 @@
-"""
-Вспомогательные функции
-"""
-
-from datetime import datetime
 import pytz
+from datetime import datetime
 
 TIMEZONE = pytz.timezone('Asia/Ashgabat')
 
 def format_date(date_str: str) -> str:
-    """Форматирование даты для отображения"""
+    """Форматирует дату в удобный для чтения вид"""
     if not date_str:
         return "не указана"
     
     try:
-        if 'Z' in date_str:
+        # Убираем Z и добавляем часовой пояс UTC для преобразования
+        if date_str.endswith('Z'):
             date_str = date_str.replace('Z', '+00:00')
         
-        dt = datetime.fromisoformat(date_str).astimezone(TIMEZONE)
-        return dt.strftime('%d.%m.%Y')
-    except:
+        # Парсим дату
+        dt = datetime.fromisoformat(date_str)
+        
+        # Конвертируем в локальный часовой пояс
+        dt_local = dt.astimezone(TIMEZONE)
+        
+        # Форматируем
+        return dt_local.strftime('%d.%m.%Y %H:%M')
+    except Exception as e:
+        # Возвращаем первые 10 символов (дату без времени)
         return date_str[:10] if date_str else "не указана"
 
-def format_datetime(date_str: str) -> str:
-    """Форматирование даты и времени"""
-    if not date_str:
-        return "не указана"
-    
-    try:
-        if 'Z' in date_str:
-            date_str = date_str.replace('Z', '+00:00')
-        
-        dt = datetime.fromisoformat(date_str).astimezone(TIMEZONE)
-        return dt.strftime('%d.%m.%Y %H:%M')
-    except:
-        return date_str[:16] if date_str else "не указана"
 
 def calculate_days_until(date_str: str) -> int:
-    """Вычисление дней до даты"""
+    """Рассчитывает сколько дней осталось до указанной даты"""
     if not date_str:
         return None
     
     try:
-        if 'Z' in date_str:
+        # Убираем Z и добавляем часовой пояс UTC для преобразования
+        if date_str.endswith('Z'):
             date_str = date_str.replace('Z', '+00:00')
         
+        # Парсим дату
         target_date = datetime.fromisoformat(date_str).astimezone(TIMEZONE).date()
         today = datetime.now(TIMEZONE).date()
         
-        return (target_date - today).days
-    except:
+        # Разница в днях
+        delta = target_date - today
+        return delta.days
+    except Exception:
         return None
-
-def status_to_emoji(status: str) -> str:
-    """Преобразование статуса в эмодзи"""
-    emojis = {
-        'New': '🆕',
-        'In Progress CHN': '🇨🇳',
-        'In Transit CHN-IR': '🚢',
-        'In Progress IR': '🇮🇷',
-        'In Transit IR-TKM': '🚛',
-        'Completed': '✅',
-        'Cancelled': '❌'
-    }
-    return emojis.get(status, '📦')
