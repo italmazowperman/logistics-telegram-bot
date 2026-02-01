@@ -19,8 +19,9 @@ from telegram.ext import (
 )
 from supabase import create_client, Client
 from dotenv import load_dotenv
-from report_generator import generate_pdf_report
-from utils import format_date, calculate_days_until
+
+# Удаляем проблемный импорт и добавляем функцию прямо здесь
+# from utils import format_date, calculate_days_until
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -38,6 +39,53 @@ SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 ADMIN_CHAT_IDS = [int(x.strip()) for x in os.getenv('ADMIN_CHAT_IDS', '').split(',') if x.strip()]
 TIMEZONE = pytz.timezone('Asia/Ashgabat')
+
+# ========== ДОБАВЛЯЕМ ФУНКЦИИ ЗДЕСЬ ВМЕСТО ИМПОРТА ИЗ UTILS ==========
+
+def format_date(date_str: str) -> str:
+    """Форматирует дату в удобный для чтения вид"""
+    if not date_str:
+        return "не указана"
+    
+    try:
+        # Убираем Z и добавляем часовой пояс UTC для преобразования
+        if date_str.endswith('Z'):
+            date_str = date_str.replace('Z', '+00:00')
+        
+        # Парсим дату
+        dt = datetime.fromisoformat(date_str)
+        
+        # Конвертируем в локальный часовой пояс
+        dt_local = dt.astimezone(TIMEZONE)
+        
+        # Форматируем
+        return dt_local.strftime('%d.%m.%Y %H:%M')
+    except Exception as e:
+        logger.warning(f"Error formatting date {date_str}: {e}")
+        # Возвращаем первые 10 символов (дату без времени)
+        return date_str[:10] if date_str else "не указана"
+
+
+def calculate_days_until(date_str: str) -> int:
+    """Рассчитывает сколько дней осталось до указанной даты"""
+    if not date_str:
+        return None
+    
+    try:
+        # Убираем Z и добавляем часовой пояс UTC для преобразования
+        if date_str.endswith('Z'):
+            date_str = date_str.replace('Z', '+00:00')
+        
+        # Парсим дату
+        target_date = datetime.fromisoformat(date_str).astimezone(TIMEZONE).date()
+        today = datetime.now(TIMEZONE).date()
+        
+        # Разница в днях
+        delta = target_date - today
+        return delta.days
+    except Exception as e:
+        logger.warning(f"Error calculating days until {date_str}: {e}")
+        return None
 
 # Проверка обязательных переменных
 if not TELEGRAM_BOT_TOKEN:
@@ -1231,4 +1279,5 @@ async def main():
     await application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == '__main__':
+
     asyncio.run(main())
